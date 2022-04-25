@@ -1,0 +1,1 @@
+Repository contains experiments and notebooks on different quantum computers. The notebooks are sorted in a folder designated for the specific quantum computer. At the moment we are mostly investigating DWaves quantum annealer. 
