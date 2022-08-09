@@ -1,5 +1,5 @@
 import numpy as np
-from skimage.transform import radon, iradon, rescale
+from skimage.transform import radon, iradon, iradon_sart, rescale
 import matplotlib.pyplot as plt
 import copy
 
@@ -164,10 +164,35 @@ def get_fbp_reconstruction(sinogram, image_shape, no_angles=None):
     """
     if no_angles is None:
         plt_sinogram = sinogram.reshape(image_shape, order='F')
+        no_angles = max(image_shape)
     else:
         plt_sinogram = sinogram.reshape((image_shape[0], no_angles), order='F')
-    reconstruction_fbp = iradon(plt_sinogram, theta=np.linspace(0., 180., no_angles.shape[1], endpoint=False), filter_name='ramp')
+    reconstruction_fbp = iradon(plt_sinogram, theta=np.linspace(0., 180., no_angles, endpoint=False), filter_name='ramp')
     return reconstruction_fbp
+
+def get_sart_reconstruction(sinogram, image_shape, no_angles=None, image=None):
+    if no_angles is None:
+        plt_sinogram = sinogram.reshape(image_shape, order='F')
+        no_angles = max(image_shape)
+    else:
+        plt_sinogram = sinogram.reshape((image_shape[0], no_angles), order='F')
+    if image is None:
+        reconstruction_sart = iradon_sart(plt_sinogram, theta=np.linspace(0., 180., no_angles, endpoint=False))
+    else:
+        reconstruction_sart = iradon_sart(plt_sinogram, theta=np.linspace(0., 180., no_angles, endpoint=False), image=image)
+    return reconstruction_sart
+
+def get_reconstruction_circle(image_shape):
+    n1 = image_shape[0]
+    n2 = image_shape[1]
+    shape_min = min(n1, n2)
+    radius = shape_min // 2
+    img_shape = np.array((n1, n2))
+    coords = np.array(np.ogrid[:n1, :n2], dtype=object)
+    dist = ((coords - img_shape // 2) ** 2).sum(0)
+    outside_reconstruction_circle = dist > radius ** 2
+    outside_reconstruction_circle = np.invert(outside_reconstruction_circle)
+    return outside_reconstruction_circle
 
 def get_rmse(reconstruction, image):
     """
@@ -184,7 +209,7 @@ def get_rmse(reconstruction, image):
     rmse = np.sqrt(np.mean(error**2))
     return rmse
 
-def plot_image_sinogram(image, sinogram):
+def plot_image_sinogram(image, sinogram, save_file=None):
     """Plot the image and sinogram.
 
     Args:
@@ -197,7 +222,6 @@ def plot_image_sinogram(image, sinogram):
     ax1.imshow(image, cmap=plt.cm.Greys_r)
 
     plt_sinogram = sinogram.reshape(image.shape, order='F')
-    print(plt_sinogram.shape)
     dx, dy = 0.5 * 180.0 / max(image.shape), 0.5 / plt_sinogram.shape[0]
 
     ax2.set_title("Radon transform\n(Sinogram)")
@@ -209,9 +233,13 @@ def plot_image_sinogram(image, sinogram):
             aspect='auto')
     fig.tight_layout()
     fig.patch.set_facecolor('white')
-    plt.show()
+    if save_file is None:
+        plt.show()
+    else: 
+        plt.savefig(save_file)
+        plt.close(fig)
 
-def plot_fbp_reconstruction(reconstruction_fbp, image):
+def plot_fbp_reconstruction(reconstruction_fbp, image, save_file=None):
     """Plot the reconstruction and error.
 
     Args:
@@ -229,16 +257,44 @@ def plot_fbp_reconstruction(reconstruction_fbp, image):
     fig.subplots_adjust(right=0.85)
     cbar_ax = fig.add_axes([0.88, 0.15, 0.04, 0.7])
     fig.colorbar(shw1, cax=cbar_ax, fraction=0.0046)
-    plt.show()
+    if save_file is None:
+        plt.show()
+    else: 
+        plt.savefig(save_file)
+        plt.close(fig)
 
-def plot_qa_reconstruction(reconstruction_qa, image):
+def plot_sart_reconstruction(reconstruction_sart, image, save_file=None):
+    """Plot the reconstruction and error.
+
+    Args:
+        image (np.ndarray, int): Ground truth image of object.
+        reconstruction_fbp (np.ndarray, float): FBP reconstructed image.
+    """
+    imkwargs = dict(vmin=-0.2, vmax=0.2)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4.5), sharex=True, sharey=True)
+    ax1.set_title("Reconstruction\nSART")
+    shw0 = ax1.imshow(reconstruction_sart, cmap=plt.cm.Greys_r)
+    ax2.set_title("Reconstruction error\nSART")
+    shw1 = ax2.imshow(reconstruction_sart - image, cmap=plt.cm.Greys_r, **imkwargs)
+    fig.patch.set_facecolor('white')
+    # add space for colour bar
+    fig.subplots_adjust(right=0.85)
+    cbar_ax = fig.add_axes([0.88, 0.15, 0.04, 0.7])
+    fig.colorbar(shw1, cax=cbar_ax, fraction=0.0046)
+    if save_file is None:
+        plt.show()
+    else: 
+        plt.savefig(save_file)
+        plt.close(fig)
+
+def plot_qa_reconstruction(reconstruction_qa, image, save_file=None):
     """Plot the reconstruction and error.
 
     Args:
         image (np.ndarray, int): Ground truth image of object.
         reconstruction_qa (np.ndarray, int): Quantum annealing reconstructed image.
     """
-    reconstruction_qa = reconstruction_qa.reshape(image.shape)
+    reconstruction_qa = reconstruction_qa[0].reshape(image.shape)
     imkwargs = dict(vmin=-0.2, vmax=0.2)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4.5), sharex=True, sharey=True)
     ax1.set_title("Reconstruction\nQuantum Annealing")
@@ -250,7 +306,11 @@ def plot_qa_reconstruction(reconstruction_qa, image):
     fig.subplots_adjust(right=0.85)
     cbar_ax = fig.add_axes([0.88, 0.15, 0.04, 0.7])
     fig.colorbar(shw1, cax=cbar_ax, fraction=0.0046)
-    plt.show()
+    if save_file is None:
+        plt.show()
+    else: 
+        plt.savefig(save_file)
+        plt.close(fig)
 
 
 ################################################################
