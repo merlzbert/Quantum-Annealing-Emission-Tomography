@@ -1,4 +1,8 @@
 Results/
+Plots/
+ResultsDigits/
+ResultsDigitsNoise/
+ResultsDigitsInteger/
 Archive/
 Samplesets/
 BQM_FloatingPoint/
