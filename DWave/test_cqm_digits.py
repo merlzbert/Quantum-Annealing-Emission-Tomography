@@ -17,7 +17,7 @@ base_path = 'DWave/Results/ResultsDigitsNoise/'
 # np.save(base_path + 'digit_idx.npy', rand_idx)
 rand_idx = np.load(base_path + 'digit_idx.npy')
 
-results_path = 'DWave/ResultsDigitsNoise/'
+results_path = 'DWave/Results/ResultsDigitsNoise/'
 # Image size
 m = 8
 # Load the digits dataset
@@ -40,7 +40,6 @@ for i in rand_idx:
     save_sinogram = cur_result + 'sinogram' + '_' + str(i) + '_' + str(m) + '.png'
     plot_image_sinogram(image, sinogram, save_file = save_sinogram)
     # Set up problem
-    print("Sers")
     bqm = get_cqm_integer(system, sinogram, lowerBound=0, upperBound=17)
 
     # FBP

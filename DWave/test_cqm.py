@@ -39,7 +39,6 @@ for m in mat_sizes:
         save_sinogram = cur_result + 'sinogram' + '_' + img_name + '_' + str(m) + '.png'
         plot_image_sinogram(image, sinogram, save_file = save_sinogram)
         # Set up problem
-        print("Sers")
         bqm = get_cqm_integer(system, sinogram, lowerBound=0, upperBound=8)
 
         # FBP
