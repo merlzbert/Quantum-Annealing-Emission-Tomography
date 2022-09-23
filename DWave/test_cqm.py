@@ -1,34 +1,74 @@
-from tomography_radon import get_system, get_sinogram, plot_image_sinogram, plot_qa_reconstruction
+from tomography_radon import get_system, get_sinogram, get_reconstruction_circle, get_rmse, plot_image_sinogram, plot_qa_reconstruction, plot_fbp_reconstruction, plot_sart_reconstruction, get_fbp_reconstruction, get_sart_reconstruction
 from tomography_cqm import get_cqm_integer, sample_cqm, get_cqm_reconstructions, save_sampleset
 import numpy as np
 import dimod
+import os
+from skimage import io
+from skimage.transform import resize
+from skimage.filters import threshold_mean
+from skimage.data import shepp_logan_phantom
 
-image = np.array([[0, 0, 0, 0, 0], [0, 4.0, 0.0, 0, 0], [0, 5.0, 0, 0.0, 0], [0, 6.0, 7.0, 8.0, 0], [0, 0, 0, 0, 0]])
+# Matrix sizes to test
+mat_sizes = [8, 16, 32, 64]
+# Images
+base_path = 'DWave/Results/ResultsSheppLogan'
+results_path = 'DWave/Results/ResultsSheppLogan'
+filenames = os.listdir(base_path)
+print(filenames)
 
-system = get_system(image)
-sinogram = get_sinogram(image, system)
+for m in mat_sizes:
+    # Calculate system matrix for each matrix size
+    system = get_system(np.zeros((m, m)))
+    print("Computed system matrix")
+    for f in filenames:
+        # Path names ...
+        filename = base_path + '/' + f
+        img_name = f
+        cur_result = results_path + '/' + img_name + '/' + str(m) + '/'
+        # Load shepp Logan phantom
+        image = shepp_logan_phantom()
+        # Resize and binarize
+        image = resize(image, (m, m), anti_aliasing=True)
+        image *= 8
+        image = image.astype(int)
+        mask = get_reconstruction_circle(image.shape).astype(int)
+        image = image * mask
+        # Forward projection
+        sinogram = get_sinogram(image, system)
+        # Save sinogram
+        save_sinogram = cur_result + 'sinogram' + '_' + img_name + '_' + str(m) + '.png'
+        plot_image_sinogram(image, sinogram, save_file = save_sinogram)
+        # Set up problem
+        print("Sers")
+        bqm = get_cqm_integer(system, sinogram, lowerBound=0, upperBound=8)
 
-plot_image_sinogram(image, sinogram)
+        # FBP
+        save_fbp = cur_result + 'fbp' + '_' + img_name + '_' + str(m) + '.png'
+        reconstruction_fbp = get_fbp_reconstruction(sinogram, image.shape)
+        plot_fbp_reconstruction(reconstruction_fbp, image, save_file=save_fbp)
+        # SART
+        save_sart = cur_result + 'sart' + '_' + img_name + '_' + str(m) + '.png'
+        reconstruction_sart = get_sart_reconstruction(sinogram, image.shape)
+        reconstruction_sart = get_sart_reconstruction(sinogram, image.shape, image = reconstruction_sart)
+        plot_sart_reconstruction(reconstruction_sart, image, save_file=save_sart)
+        # Sampleset
+        title = 'integer' + '_' + f + '_' + str(m)
+        sampleset = sample_cqm(bqm, label=title)
+        save_sampleset(sampleset, cur_result + title + '.json')
+        # QA
+        reconstruction_qa = get_cqm_reconstructions(sampleset, image.shape)
+        save_qa = cur_result + 'qa' + '_' + img_name + '_' + str(m) + '.png'
+        plot_qa_reconstruction(reconstruction_qa, image, save_file=save_qa)
 
-cqm = get_cqm_integer(system, sinogram)
+        # Calculate RMSE for each reconstruction technique
+        rmse_fbp = get_rmse(reconstruction_fbp, image)
+        rmse_sart = get_rmse(reconstruction_sart, image)
+        rmse_qa = get_rmse(reconstruction_qa[0].reshape(image.shape), image)
+        rmse = np.array([rmse_fbp, rmse_sart, rmse_qa])
 
-bqm, invert = dimod.cqm_to_bqm(cqm)
-print(bqm)
+        np.savez(cur_result + title + '.npz', image=image, sinogram=sinogram, reconstruction_fbp=reconstruction_fbp,
+         reconstruction_sart=reconstruction_sart, reconstruction_qa=reconstruction_qa, rmse=rmse)
 
-# from dwave.system import DWaveSampler, EmbeddingComposite, LeapHybridSampler
-# from dwave.embedding.chain_strength import scaled
-# import dwave.inspector
-# chain_strength = scaled(bqm)
-# sampleset = EmbeddingComposite(DWaveSampler()).sample(bqm, num_reads=1000, label="QUBO Matrix Inversion", chain_strength=chain_strength)
-# dwave.inspector.show(sampleset)
-# save_sampleset(sampleset, "Sampleset_CQM_to_BQM.json")
-
-# print(invert(sampleset.first))
-# sampleset = sample_cqm(cqm, "Test")
-
-# reconstruction =get_cqm_reconstructions(sampleset, image.shape)[0]
-
-# plot_qa_reconstruction(reconstruction, image)
 
 
 

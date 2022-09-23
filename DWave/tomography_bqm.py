@@ -34,14 +34,13 @@ def get_bqm(system, sinogram):
     # Matrix formulation has to be done in Sympy
     M = Matrix(system.tolist())
     x_list = []
-    for i in range(system.shape[1]):
+    for i in range(system.shape[0]):
         x_list.append(sympify(str('x'+str(i))))
     X = Matrix(x_list)
-    Y = Matrix(sinogram.tolist())
+    Y = Matrix(sinogram)
     # Least squares like equation
     A = M.multiply(X)-Y
     result = str(A.T.multiply(A)[0, 0])
-
     # Make it compatible with lists
     non_zero_entries = []
     for i in reversed(range(len(X))):
@@ -64,6 +63,80 @@ def get_bqm(system, sinogram):
      if c not in non_zero_entries:
          cqm.add_constraint(x[c] == 0, label='constraint_' + str(c))
     return cqm
+
+def get_matmul_string(system, sinogram):
+    """
+    Create constrained quadratic model from linear equation with system and sinogram. This method formulates
+    a ConstrainedQuadraticModel suitable for the DWave HybridSampler. Essentially, we minimize a set of linear
+    equations specified by the system and sinogram in a least-square fashion. As the HybridSampler is not yet
+    able to process matrix operations we pre-formulate the problem in Sympy. We can then set the objective function
+    to minimize for the CQM and can further definer constraints. Here we define a non-negativity constraint, a range
+    constraint aswell as a zero equality constraint for the pixel outside of the reconstruction circle.
+    Args:
+        system (np.ndarray, float): Contains the system matrix for the radon transform 
+                                    Shape: (no_p*max(image.shape[0], image.shape[1]), image.shape[0]*image.shape[1]).
+        sinogram (np.ndarray, float): Flattened sinogram , resulting from the multiplication of the systen matrix with the flattened image. Contains the projections for each angle.
+                                      Shape: (no_p*max(image.shape[0], image.shape[1]))
+        lowerBound (int, optional): Non-negativity constraint, integer values must be greate than zero. Defaults to 0.
+        upperBound (int, optional): Upper bound for integers possible in reconstruction. Defaults to 50.
+
+    Returns:
+        cqm (dimod.ConstrainedQuadraticModel): The resulting constrained quadratic model for the HybridSampler.
+    """
+    from sympy import sympify, Matrix
+    # Matrix formulation has to be done in Sympy
+    M = Matrix(system.tolist())
+    x_list = []
+    for i in range(system.shape[1]):
+        x_list.append(sympify(str('x'+str(i))))
+    X = Matrix(x_list)
+    Y = Matrix(sinogram.tolist())
+    # Least squares like equation
+    A = M.multiply(X)-Y
+    result = str(A.T.multiply(A)[0, 0])
+    return result, X
+
+def get_bqm_part(result, X):
+    """
+    Create constrained quadratic model from linear equation with system and sinogram. This method formulates
+    a ConstrainedQuadraticModel suitable for the DWave HybridSampler. Essentially, we minimize a set of linear
+    equations specified by the system and sinogram in a least-square fashion. As the HybridSampler is not yet
+    able to process matrix operations we pre-formulate the problem in Sympy. We can then set the objective function
+    to minimize for the CQM and can further definer constraints. Here we define a non-negativity constraint, a range
+    constraint aswell as a zero equality constraint for the pixel outside of the reconstruction circle.
+    Args:
+        system (np.ndarray, float): Contains the system matrix for the radon transform 
+                                    Shape: (no_p*max(image.shape[0], image.shape[1]), image.shape[0]*image.shape[1]).
+        sinogram (np.ndarray, float): Flattened sinogram , resulting from the multiplication of the systen matrix with the flattened image. Contains the projections for each angle.
+                                      Shape: (no_p*max(image.shape[0], image.shape[1]))
+        lowerBound (int, optional): Non-negativity constraint, integer values must be greate than zero. Defaults to 0.
+        upperBound (int, optional): Upper bound for integers possible in reconstruction. Defaults to 50.
+
+    Returns:
+        cqm (dimod.ConstrainedQuadraticModel): The resulting constrained quadratic model for the HybridSampler.
+    """
+    # Make it compatible with lists
+    non_zero_entries = []
+    for i in reversed(range(len(X))):
+        tmp_res = result
+        result = result.replace('x'+str(i), 'x['+str(i)+']')
+        if result != tmp_res:
+            non_zero_entries.append(i)
+    # Create the quadratic model
+    cqm = ConstrainedQuadraticModel()
+    # Create a list of integer variables for each solution component
+    x = []
+    for i in range(len(X)):
+        x.append(Binary('x'+str(i)))
+    # Reformulated objective function to minimize here
+    program = 'cqm.set_objective(' + result + ')'
+    exec(program)
+    # Add constraints, here non-negativity and range constraint
+    for c in range(len(X)):
+     if c not in non_zero_entries:
+         cqm.add_constraint(x[c] == 0, label='constraint_' + str(c))
+    return cqm
+    
 
 def sample_bqm(cqm, label=None):
     """

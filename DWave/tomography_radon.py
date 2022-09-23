@@ -120,7 +120,7 @@ def generate_noise(image, lowerBound=-1, upperBound=1):
     Returns:
         noise_image(np.ndarray, int): Image corrupted with noise.
     """
-    noise = np.random.randint(lowerBound, upperBound+1, size=object.shape)
+    noise = np.random.randint(lowerBound, upperBound+1, size=image.shape)
     mask = copy.deepcopy(image)
     mask[mask != 0] = 1
     noise = mask * noise
