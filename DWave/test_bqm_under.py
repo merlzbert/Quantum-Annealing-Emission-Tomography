@@ -7,15 +7,16 @@ from skimage import io
 from skimage.transform import resize
 from skimage.filters import threshold_mean
 
-mat_sizes = [4]
+mat_sizes = [16, 20, 24, 28, 32]
 base_path = 'DWave/BinaryImages'
 results_path = 'DWave/Results/UnderdeterminedBinary'
 filenames = os.listdir(base_path)
 
 for m in mat_sizes:
-    system = get_system(np.zeros((m, m)))
+    no_angles = m//2
+    system = get_system(np.zeros((m, m)), no_angles=no_angles)
     print("Computed system matrix")
-    for f in [filenames[0]]:
+    for f in filenames:
         # Path names ...
         filename = base_path + '/' + f
         img_name = f[:-4]
@@ -39,15 +40,15 @@ for m in mat_sizes:
         bqm = get_bqm(system, sinogram)
         # FBP
         save_fbp = cur_result + 'fbp' + '_' + img_name + '_' + str(m) + '.png'
-        reconstruction_fbp = get_fbp_reconstruction(sinogram, image.shape)
+        reconstruction_fbp = get_fbp_reconstruction(sinogram, image.shape, no_angles=no_angles)
         plot_fbp_reconstruction(reconstruction_fbp, image, save_file=save_fbp)
         # SART
         save_sart = cur_result + 'sart' + '_' + img_name + '_' + str(m) + '.png'
-        reconstruction_sart = get_sart_reconstruction(sinogram, image.shape)
-        reconstruction_sart = get_sart_reconstruction(sinogram, image.shape, image = reconstruction_sart)
+        reconstruction_sart = get_sart_reconstruction(sinogram, image.shape, no_angles=no_angles)
+        reconstruction_sart = get_sart_reconstruction(sinogram, image.shape, image = reconstruction_sart, no_angles=no_angles)
         plot_sart_reconstruction(reconstruction_sart, image, save_file=save_sart)
         # Sampleset
-        title = 'binary' + '_' + f[:-4] + '_' + str(m)
+        title = 'underdetermined_binary' + '_' + f[:-4] + '_' + str(m)
         sampleset = sample_bqm(bqm, label=title)
         save_sampleset(sampleset, cur_result + title + '.json')
         # QA

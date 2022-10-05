@@ -1,3 +1,5 @@
+# Copyright © Siemens Medical Solutions USA, Inc., 2021. All rights reserved. Unauthorized reproduction prohibited.
+
 import numpy as np
 from skimage.transform import radon, iradon, iradon_sart, rescale
 import matplotlib.pyplot as plt
@@ -157,7 +159,7 @@ def get_fbp_reconstruction(sinogram, image_shape, no_angles=None):
         sinogram (np.ndarray, float): Flattened sinogram , resulting from the multiplication of the systen matrix with the flattened image. Contains the projections for each angle.
                                       Shape: (no_p*max(image.shape[0], image.shape[1]))
         image_shape (tuple, int): Contains the size of the image to reconstruct.
-        no_angles (int, optional): Number of projections. Defaults to None and will then choose max(image.shape[0], image.shape[0])
+        no_angles (int, optional): Number of projections. Defaults to None and will then choose max(image.shape[0], image.shape[1])
 
     Returns:
         reconstruction_fbp (np.ndarray, float): Contains the FBP reconstruction from the given sinogram.
@@ -221,7 +223,7 @@ def plot_image_sinogram(image, sinogram, save_file=None):
     ax1.set_title("Original")
     ax1.imshow(image, cmap=plt.cm.Greys_r)
 
-    plt_sinogram = sinogram.reshape(image.shape, order='F')
+    plt_sinogram = sinogram.reshape((image.shape[0], sinogram.shape[0]//image.shape[0]), order='F')
     dx, dy = 0.5 * 180.0 / max(image.shape), 0.5 / plt_sinogram.shape[0]
 
     ax2.set_title("Radon transform\n(Sinogram)")

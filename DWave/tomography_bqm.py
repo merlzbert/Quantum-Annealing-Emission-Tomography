@@ -34,7 +34,7 @@ def get_bqm(system, sinogram):
     # Matrix formulation has to be done in Sympy
     M = Matrix(system.tolist())
     x_list = []
-    for i in range(system.shape[0]):
+    for i in range(system.shape[1]):
         x_list.append(sympify(str('x'+str(i))))
     X = Matrix(x_list)
     Y = Matrix(sinogram)

@@ -10,7 +10,7 @@ from skimage.data import shepp_logan_phantom
 from sklearn import datasets
 
 
-
+noise = False
 base_path = 'DWave/Results/UnderdeterminedResultsDigits/'
 # Load random incices for samples of the Digit Dataset
 # rand_idx = np.random.randint(0, 1797, size=32)
@@ -22,11 +22,11 @@ results_path = 'DWave/Results/UnderdeterminedResultsDigits/'
 m = 8
 # Load the digits dataset
 digits = datasets.load_digits()
-
-system = get_system(np.zeros((m, m)))
+no_angles = m//2
+system = get_system(np.zeros((m, m)), no_angles=no_angles)
 
 print("Computed system matrix")
-for i in rand_idx[:-28]:
+for i in rand_idx[4:]:
     # Path names ...
     cur_result = results_path + '/' + str(i) + '/'
     create_f = os.path.join(results_path, str(i))
@@ -35,8 +35,10 @@ for i in rand_idx[:-28]:
     mask = get_reconstruction_circle(image.shape).astype(int)
     image = image * mask
     # Forward projection
-    # sinogram = get_sinogram(image, system)
-    sinogram = get_sinogram_noise(image)
+    if noise:
+        sinogram = get_sinogram_noise(image)
+    else:
+        sinogram = get_sinogram(image, system)
     # Save sinogram
     save_sinogram = cur_result + 'sinogram' + '_' + str(i) + '_' + str(m) + '.png'
     plot_image_sinogram(image, sinogram, save_file = save_sinogram)
@@ -45,12 +47,12 @@ for i in rand_idx[:-28]:
 
     # FBP
     save_fbp = cur_result + 'fbp' + '_' + str(i) + '_' + str(m) + '.png'
-    reconstruction_fbp = get_fbp_reconstruction(sinogram, image.shape)
+    reconstruction_fbp = get_fbp_reconstruction(sinogram, image.shape, no_angles=no_angles)
     plot_fbp_reconstruction(reconstruction_fbp, image, save_file=save_fbp)
     # SART
     save_sart = cur_result + 'sart' + '_' + str(i) + '_' + str(m) + '.png'
-    reconstruction_sart = get_sart_reconstruction(sinogram, image.shape)
-    reconstruction_sart = get_sart_reconstruction(sinogram, image.shape, image = reconstruction_sart)
+    reconstruction_sart = get_sart_reconstruction(sinogram, image.shape, no_angles=no_angles)
+    reconstruction_sart = get_sart_reconstruction(sinogram, image.shape, image = reconstruction_sart, no_angles=no_angles)
     plot_sart_reconstruction(reconstruction_sart, image, save_file=save_sart)
     # Sampleset
     title = 'integer_noise' + '_' + 'digit' + '_'  +str(i) + '_' + str(m)
