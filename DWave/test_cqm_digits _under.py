@@ -11,7 +11,7 @@ from sklearn import datasets
 
 
 noise = False
-base_path = 'DWave/Results/UnderdeterminedResultsDigits/'
+base_path = 'DWave/Results/UnderdeterminedResultsDigits2/'
 # Load random incices for samples of the Digit Dataset
 # rand_idx = np.random.randint(0, 1797, size=32)
 # np.save(base_path + 'digit_idx.npy', rand_idx)
@@ -22,15 +22,17 @@ results_path = 'DWave/Results/UnderdeterminedResultsDigits/'
 m = 8
 # Load the digits dataset
 digits = datasets.load_digits()
-no_angles = m//2
+no_angles = 2
 system = get_system(np.zeros((m, m)), no_angles=no_angles)
 
 print("Computed system matrix")
 for i in rand_idx[4:]:
     # Path names ...
     cur_result = results_path + '/' + str(i) + '/'
-    create_f = os.path.join(results_path, str(i))
-    os.mkdir(create_f)
+    isExist = os.path.exists(cur_result)
+    if not isExist:
+        # Create a new directory because it does not exist
+        os.makedirs(cur_result)
     image = digits.images[i]
     mask = get_reconstruction_circle(image.shape).astype(int)
     image = image * mask

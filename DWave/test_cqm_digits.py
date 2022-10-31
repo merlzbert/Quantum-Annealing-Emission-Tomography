@@ -29,8 +29,10 @@ print("Computed system matrix")
 for i in rand_idx[:-28]:
     # Path names ...
     cur_result = results_path + '/' + str(i) + '/'
-    create_f = os.path.join(results_path, str(i))
-    os.mkdir(create_f)
+    isExist = os.path.exists(cur_result)
+    if not isExist:
+        # Create a new directory because it does not exist
+        os.makedirs(cur_result)
     image = digits.images[i]
     mask = get_reconstruction_circle(image.shape).astype(int)
     image = image * mask

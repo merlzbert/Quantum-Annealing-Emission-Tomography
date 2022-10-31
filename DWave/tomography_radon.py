@@ -2,6 +2,7 @@
 
 import numpy as np
 from skimage.transform import radon, iradon, iradon_sart, rescale
+from skimage.metrics import structural_similarity
 import matplotlib.pyplot as plt
 import copy
 
@@ -205,11 +206,24 @@ def get_rmse(reconstruction, image):
         image (np.ndarray, int):  image (np.ndarray, int): Ground truth image of object.
 
     Returns:
-        rmse (floate): Root mean square error.
+        rmse (float): Root mean square error.
     """
     error = reconstruction - image
     rmse = np.sqrt(np.mean(error**2))
     return rmse
+
+def get_ssim(reconstruction, image):
+    """
+    Calculate structural similarity index between reconstruction and image.
+
+    Args:
+        reconstruction (np.ndarray, int/float): Reconstructed image, value type depends on reconstruction method.
+        image (np.ndarray, int):  image (np.ndarray, int): Ground truth image of object.
+
+    Returns:
+        ssim (float): Structural similarity index.
+    """
+    return structural_similarity(reconstruction, image, full=True)
 
 def plot_image_sinogram(image, sinogram, save_file=None):
     """Plot the image and sinogram.

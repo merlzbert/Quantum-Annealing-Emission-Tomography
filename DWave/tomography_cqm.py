@@ -135,7 +135,7 @@ def get_cqm_integer_separatevars(system, sinogram, lowerBound = 0, upperBound=50
     cqm.substitute_self_loops()
     return cqm
 
-def sample_cqm(cqm, label=None):
+def sample_cqm(cqm, time_limit=None, label=None):
     """
     Sample the ConstrainedQuadraticModel on one of DWaves Hybrid Samplers and filter for feasible results.
     Args:
@@ -148,10 +148,12 @@ def sample_cqm(cqm, label=None):
         https://docs.ocean.dwavesys.com/en/stable/docs_dimod/reference/sampleset.html
     """
     if label is None:
-        # Sample from the Hybrid Solver on our constrained quadratic model
-        sampleset = LeapHybridCQMSampler().sample_cqm(cqm, label="Tomo Inversion Problem")
-    else: 
+        label="Tomo Inversion Problem"
+    if time_limit is None:
         sampleset = LeapHybridCQMSampler().sample_cqm(cqm, label=label)
+    else:
+        sampleset = LeapHybridCQMSampler().sample_cqm(cqm, time_limit=time_limit, label=label)
+
     # Filter feasible solutions
     feasible_sampleset = sampleset.filter(lambda row: row.is_feasible) 
     return feasible_sampleset

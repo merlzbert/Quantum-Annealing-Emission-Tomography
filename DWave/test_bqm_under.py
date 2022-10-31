@@ -7,13 +7,13 @@ from skimage import io
 from skimage.transform import resize
 from skimage.filters import threshold_mean
 
-mat_sizes = [16, 20, 24, 28, 32]
+mat_sizes = [4, 8, 12, 16, 20, 24, 28, 32]
 base_path = 'DWave/BinaryImages'
-results_path = 'DWave/Results/UnderdeterminedBinary'
+results_path = 'DWave/Results/UnderdeterminedBinary4'
 filenames = os.listdir(base_path)
 
 for m in mat_sizes:
-    no_angles = m//2
+    no_angles = 4
     system = get_system(np.zeros((m, m)), no_angles=no_angles)
     print("Computed system matrix")
     for f in filenames:
@@ -21,6 +21,10 @@ for m in mat_sizes:
         filename = base_path + '/' + f
         img_name = f[:-4]
         cur_result = results_path + '/' + img_name + '/' + str(m) + '/'
+        isExist = os.path.exists(cur_result)
+        if not isExist:
+            # Create a new directory because it does not exist
+            os.makedirs(cur_result)
         image = io.imread(filename)
         # Resize and binarize
         image = resize(image, (m, m), anti_aliasing=True)

@@ -20,6 +20,10 @@ for m in mat_sizes:
         filename = base_path + '/' + f
         img_name = f[:-4]
         cur_result = results_path + '/' + img_name + '/' + str(m) + '/'
+        isExist = os.path.exists(cur_result)
+        if not isExist:
+            # Create a new directory because it does not exist
+            os.makedirs(cur_result)
         image = io.imread(filename)
         # Resize and binarize
         image = resize(image, (m, m), anti_aliasing=True)
