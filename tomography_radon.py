@@ -1,4 +1,24 @@
-# Copyright © Siemens Medical Solutions USA, Inc., 2021. All rights reserved. Unauthorized reproduction prohibited.
+# MIT License
+
+# Copyright (c) 2023 Merlin Nau (Friedrich-Alexander-Universität Erlangen-Nürnberg, Siemens Healthineers GmbH and Siemens Medical Solutions USA, Inc.)
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
 import numpy as np
 from skimage.transform import radon, iradon, iradon_sart, rescale
@@ -51,49 +71,6 @@ def radon_matrix(n1, n2, no_p=None):
     for k in range(len(theta)):
         for i, j in zip(valid_indices[0], valid_indices[1]):
             ei = np.zeros((n1,n2)); 
-            ei[i, j] = 1
-            ri = radon(ei, [theta[k]])
-            system[k*m:(k+1)*m,i*shape_min+j] = ri[:, 0]
-    return system
-
-def get_system(image, no_angles=None):
-    """
-    Return system matrix, just calls radon matrix.
-
-    Args:
-        image (np.ndarray, int): Ground truth image of object.
-        no_angles (int, optional): Number of projections. Defaults to None and will then choose max(image.shape[0], image.shape[0])
-
-    Returns:
-        system (np.ndarray, float): Contains the system matrix for the radon transform 
-                                    Shape: (no_p*max(image.shape[0], image.shape[1]), image.shape[0]*image.shape[1]).
-    """
-     # Set total size and number of projection.
-    n = image.shape[0] * image.shape[1]
-    if no_angles is None:
-        npro = max(image.shape[0], image.shape[1])
-    else:
-        npro = no_angles
-    # Initalize angles and system matrix
-    theta = np.linspace(0., 180., npro, endpoint=False)
-    e1 = np.zeros((image.shape[0], image.shape[1]))
-    r1 = radon(e1, theta)
-    m= r1.shape[0]
-    system = np.zeros((m*len(theta), n))
-    # Calculate pixels outside of the reconstruction circle of sklearn. 
-    # Sklearn defines a circle in the image which is rotated.
-    shape_min = min(image.shape[0], image.shape[1])
-    radius = shape_min // 2
-    img_shape = np.array((image.shape[0], image.shape[1]))
-    coords = np.array(np.ogrid[:image.shape[0], :image.shape[1]],
-                        dtype=object)
-    dist = ((coords - img_shape // 2) ** 2).sum(0)
-    outside_reconstruction_circle = dist > radius ** 2
-    valid_indices = np.where(outside_reconstruction_circle == False)
-    # Fill system matrix
-    for k in range(len(theta)):
-        for i, j in zip(valid_indices[0], valid_indices[1]):
-            ei = np.zeros((image.shape[0], image.shape[1])); 
             ei[i, j] = 1
             ri = radon(ei, [theta[k]])
             system[k*m:(k+1)*m,i*shape_min+j] = ri[:, 0]
@@ -332,39 +309,6 @@ def plot_qa_reconstruction(reconstruction_qa, image, save_file=None):
         plt.savefig(save_file)
         plt.close(fig)
 
-def rebin_data(
-    data,
-    target_dimension: int
-):
-  """
-  Function that rebins the data object to a smaller size, either by summing or averaging.
-
-  Parameters
-  ----------
-  data : Data
-    Input data object
-  target_dimension : Tuple[int, int]
-    Target dimension
-  method : str, optional
-    Method to use, by default 'sum'
-  
-  Returns
-  -------
-  Data
-    Output data object
-  """
-
-  output_data = copy.deepcopy(data)
-
-  for dimension in [-2]:
-    if output_data.shape[dimension] > target_dimension:
-      dimensions = list(output_data.shape)
-      dimensions[dimension] = int(output_data.shape[dimension] / target_dimension)
-      dimensions.insert(dimension, int(target_dimension))
-      output_data = np.sum(np.reshape(output_data, dimensions), dimension)
-
-  return output_data
-
 def downsample_image(image, new_shape):
   image = resize(image, new_shape, anti_aliasing=True)
   mask = get_reconstruction_circle(image.shape).astype(int)
@@ -378,19 +322,3 @@ def upsample_image(image, new_shape):
   thresh = threshold_mean(image)
   image = image > thresh
   return image
-
-################################################################
-# Test:
-    # x = np.random.randint(0, 2, (n1, n2))
-    # x[outside_reconstruction_circle] = 0
-
-
-    # print("X: \n", x)
-
-    # yr = R @ x.flatten()
-
-    # yR = radon(x, theta, preserve_range=True)
-    # print("Radon: \n", yR)
-
-    # yr = yr.reshape(yR.shape)
-    # print("Mat mul: \n", yR)
