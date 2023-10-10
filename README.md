@@ -1,6 +1,6 @@
 # Quantum-Computing-Emission-Tomography
 
-This repository contains Python code to simulate and reconstruct emission tomography images with quantum computing based on our paper: "Exploring Limitations of Hybrid Adiabatic Quantum Computing for Emission Tomography Reconstruction". We have added two examples in the form of a Jupyter notebook for the reconstruction of binary images on the quantum annealer as well as code to reconstruct integer valued images. The tomography.py file contains all functions to simulate the images and reconstruct them using conventional algorithms.
+This repository contains Python code to simulate and reconstruct emission tomography images with quantum computing based on our paper: "Exploring Limitations of Hybrid Adiabatic Quantum Computing for Emission Tomography Reconstruction". We have added two examples in the form of a Jupyter notebook for the reconstruction of binary images on the quantum annealer as well as code to reconstruct integer valued images. The tomography_radon.py file contains all functions to simulate the images and reconstruct them using conventional algorithms.
 
 ## Getting Started
 
